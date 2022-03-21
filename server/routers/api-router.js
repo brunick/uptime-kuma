@@ -139,7 +139,7 @@ router.get("/api/status-page/:slug", cache("5 minutes"), async (request, respons
 
 // Status Page Polling Data
 // Can fetch only if published
-router.get("/api/status-page/heartbeat/:slug", cache("1 minutes"), async (request, response) => {
+router.get("/api/status-page/heartbeat/:slug", cache("5 seconds"), async (request, response) => {
     allowDevAllOrigin(response);
 
     try {
@@ -161,9 +161,10 @@ router.get("/api/status-page/heartbeat/:slug", cache("1 minutes"), async (reques
         for (let monitorID of monitorIDList) {
             let list = await R.getAll(`
                     SELECT * FROM heartbeat
-                    WHERE monitor_id = ?
+                    WHERE monitor_id = ? 
+                    GROUP BY strftime("%Y-%m-%d %H",time) 
                     ORDER BY time DESC
-                    LIMIT 50
+                    LIMIT 200
             `, [
                 monitorID,
             ]);
