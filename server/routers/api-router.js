@@ -148,6 +148,7 @@ router.get("/api/status-page/heartbeat/:slug", cache("5 seconds"), async (reques
 
         let slug = request.params.slug;
         let statusPageID = await StatusPage.slugToID(slug);
+        let interval = 600;
 
         let monitorIDList = await R.getCol(`
             SELECT monitor_group.monitor_id FROM monitor_group, \`group\`
@@ -160,13 +161,16 @@ router.get("/api/status-page/heartbeat/:slug", cache("5 seconds"), async (reques
 
         for (let monitorID of monitorIDList) {
             let list = await R.getAll(`
-                    SELECT * FROM heartbeat
-                    WHERE monitor_id = ? 
-                    GROUP BY strftime("%Y-%m-%d %H",time) 
-                    ORDER BY time DESC
-                    LIMIT 200
+            select id, important, monitor_id, cast(avg(status) as int) as status,msg,strftime("%Y-%m-%d %H:%M:%S",time) as time,AVG(ping), avg(duration),datetime((strftime('%s', time) / ?) * ?, 'unixepoch') interval from (
+                SELECT id, cast(avg(important)+0.6 as int) as important, monitor_id, cast(avg(status) as int) as status,msg,strftime("%Y-%m-%d %H:%M:%S",time) as time,AVG(ping) as ping, avg(duration) as duration FROM heartbeat
+                                    WHERE monitor_id = ?
+                                                        group by strftime("%Y-%m-%d %H-%M",time)
+                                    ORDER BY time DESC) as a group by interval
+                order by interval DESC
+                LIMIT 50
+                
             `, [
-                monitorID,
+                interval,interval,monitorID
             ]);
 
             list = R.convertToBeans("heartbeat", list);
