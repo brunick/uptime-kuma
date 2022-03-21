@@ -319,6 +319,7 @@ export default {
                     result.push(monitor);
                 }
             }
+            console.log('Test');
 
             return result;
         },
@@ -470,7 +471,7 @@ export default {
         this.updateHeartbeatList();
         feedInterval = setInterval(() => {
             this.updateHeartbeatList();
-        }, (300 + 10) * 1000);
+        }, ( 30) * 1000);
 
         // Go to edit page if ?edit present
         // null means ?edit present, but no value
